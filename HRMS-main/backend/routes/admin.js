@@ -1244,39 +1244,38 @@ router.get('/stats', auth, isAdmin, async (req, res) => {
     const endOfDay = new Date(today);
     endOfDay.setHours(23, 59, 59, 999);
 
-    const totalUsers = await User.countDocuments({ role: { $nin: ['admin'] } });
-    const onlineUsers = await User.countDocuments({ isOnline: true, role: { $nin: ['admin'] } });
-    
-    // Role-wise count
-    const roleCounts = await User.aggregate([
-      { $match: { role: { $nin: ['admin'] } } },
-      { $group: { _id: '$role', count: { $sum: 1 } } }
-    ]);
-    
-    // Count today's punches inside MongoDB instead of pulling every user's full attendance history
-    const [punchCounts] = await User.aggregate([
-      { $match: { role: { $nin: ['admin'] } } },
-      {
-        $project: {
-          todayRecord: {
-            $first: {
-              $filter: {
-                input: '$attendance',
-                as: 'a',
-                cond: { $and: [{ $gte: ['$$a.date', today] }, { $lte: ['$$a.date', endOfDay] }] },
+    const [totalUsers, onlineUsers, roleCounts, punchCountResults] = await Promise.all([
+      User.countDocuments({ role: { $nin: ['admin'] } }),
+      User.countDocuments({ isOnline: true, role: { $nin: ['admin'] } }),
+      User.aggregate([
+        { $match: { role: { $nin: ['admin'] } } },
+        { $group: { _id: '$role', count: { $sum: 1 } } },
+      ]),
+      User.aggregate([
+        { $match: { role: { $nin: ['admin'] } } },
+        {
+          $project: {
+            todayRecord: {
+              $first: {
+                $filter: {
+                  input: '$attendance',
+                  as: 'a',
+                  cond: { $and: [{ $gte: ['$$a.date', today] }, { $lte: ['$$a.date', endOfDay] }] },
+                },
               },
             },
           },
         },
-      },
-      {
-        $group: {
-          _id: null,
-          punchedIn: { $sum: { $cond: [{ $ifNull: ['$todayRecord.punchIn', false] }, 1, 0] } },
-          punchedOut: { $sum: { $cond: [{ $ifNull: ['$todayRecord.punchOut', false] }, 1, 0] } },
+        {
+          $group: {
+            _id: null,
+            punchedIn: { $sum: { $cond: [{ $ifNull: ['$todayRecord.punchIn', false] }, 1, 0] } },
+            punchedOut: { $sum: { $cond: [{ $ifNull: ['$todayRecord.punchOut', false] }, 1, 0] } },
+          },
         },
-      },
+      ]),
     ]);
+    const [punchCounts] = punchCountResults;
     const punchedIn = punchCounts?.punchedIn || 0;
     const punchedOut = punchCounts?.punchedOut || 0;
 

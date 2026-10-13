@@ -321,8 +321,8 @@ function AdminPanel({ onLogout }) {
 
   useEffect(() => {
     fetchData()
-    // Refresh every 10 seconds so admin sees punch-in quickly
-    const interval = setInterval(fetchData, 10000)
+    // Refresh once a minute to avoid repeatedly loading the full dashboard.
+    const interval = setInterval(fetchData, 60000)
     return () => clearInterval(interval)
   }, [fetchData])
 

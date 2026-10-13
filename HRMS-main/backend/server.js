@@ -21,8 +21,12 @@ const User = require('./models/User');
 const Notification = require('./models/Notification');
 const { sendEmail } = require('./services/email');
 const { missedPunchOutEmail } = require('./services/emailTemplates');
+const { validateEnv } = require('./config/env');
 
 const app = express();
+validateEnv();
+
+mongoose.set('bufferCommands', false);
 
 // Keep-Alive: Self-ping every 10 minutes to prevent server from sleeping
 const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes in milliseconds
@@ -154,7 +158,33 @@ mongoose.connect(process.env.MONGODB_URI, {
   useUnifiedTopology: true,
 })
 .then(() => console.log('MongoDB connected'))
-.catch(err => console.log('MongoDB connection error:', err));
+.catch(err => console.error('MongoDB connection error:', err));
+
+mongoose.connection.on('disconnected', () => {
+  console.error('MongoDB disconnected');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected');
+});
+
+// Health check must remain available when MongoDB is down for deployment monitoring.
+app.get('/api/health', (req, res) => {
+  const databaseConnected = mongoose.connection.readyState === mongoose.ConnectionStates.connected;
+  res.status(databaseConnected ? 200 : 503).json({
+    status: databaseConnected ? 'OK' : 'DEGRADED',
+    database: databaseConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== mongoose.ConnectionStates.connected) {
+    return res.status(503).json({ message: 'Database is temporarily unavailable. Please try again shortly.' });
+  }
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -169,15 +199,6 @@ app.use('/api/social', socialRoutes);
 app.use('/api/wall', wallRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/storage', storageRoutes);
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
-});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

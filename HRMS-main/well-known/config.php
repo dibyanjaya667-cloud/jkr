@@ -10,7 +10,8 @@ return [
     'https://hrms-1-f8bu.onrender.com',
     'http://localhost:3000',
     'https://hrms-backend-jf7d.onrender.com',
-    'http://hrms.jkrbim.com',
+     'https://hrms.jkrbim.com',
+     'https://jkr-nwl0.onrender.com',
     'http://localhost:5000'
   ],
   'db' => [

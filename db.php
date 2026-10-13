@@ -13,7 +13,7 @@ function storageDbConnection(array $config): ?mysqli {
 }
 
 function logStorageUpload(array $config, array $upload): void {
-  $connection = storageDbConnection($config);
+  $connection = storageDbConnection($config); `
   if (!$connection) {
     return;
   }
