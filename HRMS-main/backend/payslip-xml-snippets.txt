@@ -1,0 +1,11 @@
+=== Plain substring matches ===
+Has 'ESIC' plain? True
+Has 'OTHER DEDUCTIONS' plain? True
+\n=== Row for ESIC (plain) ===
+(No plain ESIC match)
+\n=== Row for OTHER DEDUCTIONS (plain) ===
+(No plain OTHER DEDUCTIONS match)
+\n=== Search for split-run ESIC letters ===
+(No split-run ESIC row match)
+\n=== Search for split-run OTHER DEDUCTIONS ===
+(No split-run OTHER row match)

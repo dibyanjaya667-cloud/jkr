@@ -1,0 +1,11 @@
+<?php
+
+return [
+  'STORAGE_BASE_URL' => 'https://new.jkrbim.com',
+  'STORAGE_UPLOAD_KEY' => 'replace-with-a-long-random-secret',
+  'STORAGE_ALLOWED_ORIGINS' => 'https://hrms-1-f8bu.onrender.com,http://hrms.jkrbim.com,http://localhost:3000',
+  'STORAGE_DB_HOST' => 'localhost',
+  'STORAGE_DB_USER' => 'jkrbidpi_newwwwww',
+  'STORAGE_DB_PASSWORD' => 'set-the-cpanel-database-password-here',
+  'STORAGE_DB_NAME' => 'jkrbidpi_newwwwww',
+];

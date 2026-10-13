@@ -1,0 +1,11 @@
+Options -Indexes
+
+<FilesMatch "^(config\.php|db\.php|debug-key\.php|init\.sql|README\.txt)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+<FilesMatch "\.(zip|sql|log)$">
+  Order allow,deny
+  Deny from all
+</FilesMatch>

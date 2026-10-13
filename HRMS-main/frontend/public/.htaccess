@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Let real files and directories, including Vite assets, be served normally.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# React Router routes must load the application entry point on Apache/cPanel.
+RewriteRule ^ index.html [L]
