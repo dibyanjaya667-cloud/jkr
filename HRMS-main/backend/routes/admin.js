@@ -1008,16 +1008,37 @@ router.get('/team-today-attendance', auth, isSupervisor, async (req, res) => {
     }
     const today = new Date(requestedDate);
     today.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    const users = await User.find({
-      reportsTo: currentUser._id,
-      isActive: true,
-      role: { $nin: ['admin', 'ceo', 'hr'] },
-    })
-      .select('name email employeeId attendance lastLocation isOnline manager role department reportsTo profilePicUrl')
-      .populate('manager', 'name')
-      .populate('reportsTo', 'name role')
-      .lean();
+    const users = await User.aggregate([
+      {
+        $match: {
+          reportsTo: currentUser._id,
+          isActive: true,
+          role: { $nin: ['admin', 'ceo', 'hr'] },
+        },
+      },
+      {
+        $project: {
+          name: 1, email: 1, employeeId: 1, lastLocation: 1, isOnline: 1,
+          manager: 1, role: 1, department: 1, reportsTo: 1, profilePicUrl: 1,
+          todayRecord: {
+            $first: {
+              $filter: {
+                input: '$attendance',
+                as: 'record',
+                cond: { $and: [{ $gte: ['$$record.date', today] }, { $lte: ['$$record.date', endOfDay] }] },
+              },
+            },
+          },
+        },
+      },
+    ]);
+    await User.populate(users, [
+      { path: 'manager', select: 'name' },
+      { path: 'reportsTo', select: 'name role' },
+    ]);
 
     const isAfterMissedPunchOutCutoff = (dayDate, nowDate) => {
       const cutoff = new Date(dayDate);
@@ -1027,9 +1048,7 @@ router.get('/team-today-attendance', auth, isSupervisor, async (req, res) => {
 
     const now = new Date();
     const todayAttendance = users.map(user => {
-      const todayRecord = user.attendance?.find(
-        a => new Date(a.date).toDateString() === today.toDateString()
-      );
+      const todayRecord = user.todayRecord || null;
 
       const status = (() => {
         if (!todayRecord?.punchIn) return 'absent';

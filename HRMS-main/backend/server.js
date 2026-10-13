@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const compression = require('compression');
 const path = require('path');
 const https = require('https');
 const http = require('http');
@@ -148,6 +149,7 @@ app.use(cors({
   exposedHeaders: ['Content-Disposition', 'Content-Type', 'X-Payslip-Format'],
 }));
 app.use(express.json({ limit: '2mb' }));
+app.use(compression());
 
 // Static assets (profile pics)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
