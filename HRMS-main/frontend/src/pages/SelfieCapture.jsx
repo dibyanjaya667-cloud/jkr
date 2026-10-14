@@ -75,24 +75,50 @@ function SelfieCapture() {
           // ignore
         }
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      })
+      let stream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        })
+      } catch (cameraError) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      }
       streamRef.current = stream
     }
 
     if (videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
-      videoRef.current.load()
+      const video = videoRef.current
+      video.muted = true
+      video.setAttribute('muted', '')
+      video.setAttribute('playsinline', '')
+      video.srcObject = streamRef.current
       try {
-        await videoRef.current.play()
+        await video.play()
       } catch (err) {
-        console.warn('Video play interrupted:', err)
+        throw new Error('Camera preview could not start. Please allow camera access and try again.')
+      }
+
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        await new Promise((resolve, reject) => {
+          const timeoutId = window.setTimeout(() => {
+            cleanup()
+            reject(new Error('Camera preview did not receive video. Please try again.'))
+          }, 8000)
+          const onLoadedData = () => {
+            cleanup()
+            resolve()
+          }
+          const cleanup = () => {
+            window.clearTimeout(timeoutId)
+            video.removeEventListener('loadeddata', onLoadedData)
+          }
+          video.addEventListener('loadeddata', onLoadedData, { once: true })
+        })
       }
     }
   }
