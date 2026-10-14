@@ -133,17 +133,20 @@ const autoCloseMissingPunchOuts = async () => {
 };
 
 // Middleware
-const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
+const defaultAllowedOrigins = [
+  'https://hrms.jkrbim.com',
+];
+const configuredOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
   .split(',')
-  .map(s => s.trim())
-  .filter(Boolean)
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true)
-    if (allowedOrigins.length === 0) return callback(null, true)
-    if (allowedOrigins.includes(origin)) return callback(null, true)
-    return callback(null, false)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(null, false);
   },
   credentials: true,
   exposedHeaders: ['Content-Disposition', 'Content-Type', 'X-Payslip-Format'],
